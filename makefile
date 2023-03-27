@@ -3,21 +3,21 @@ CXX = g++
 ECHO = echo
 RM = rm -f
 
-TERM = "S2019"
+TERM = "S2023"
 
 CFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 CXXFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 
-LDFLAGS = 
+LDFLAGS = -lncurses
 
-BIN = userInterface
-OBJS = userInterface.o heap.o
+BIN = neighbors
+OBJS = neighbors.o heap.o
 
 all: $(BIN) etags
 
 $(BIN): $(OBJS)
 	@$(ECHO) Linking $@
-	@$(CC) $^ -o $@ $(LDFLAGS) -lncurses
+	@$(CXX) $^ -o $@ $(LDFLAGS)
 
 -include $(OBJS:.o=.d)
 

@@ -6,7 +6,9 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <iostream>
-#include "heap.h"
+extern "C" {
+    #include "heap.h"
+}
 using namespace std;
 
 #define GRASS_COLOR 123
@@ -356,7 +358,7 @@ void dijkstra(char map[21][80], squares squares[21][80], player source) {
 
         // Get the position of the 'vertex' off of the element stored in the queue
         //  AKA its row and column indices on the map.
-        position *value = (position)u.value;
+        position *value = static_cast<position*>(u.value);
 
         // For each neighbor, v or [i][j], of u
         for (i = value->rowPos - 1; i < value->rowPos + 2; i++) {
@@ -700,7 +702,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     char trainerOptions[7] = {'r', 'h', 'p', 'w', 's', 'e', 'm'};
 
     for (i = 0; i < numTrainers; i++) {
-        trainers[i] = malloc(sizeof(*trainers[i]));
+        trainers[i] = static_cast<character*>(malloc(sizeof(*trainers[i])));
         trainers[i]->defeated = 0;
     }
 
@@ -730,7 +732,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     direction_t directionOptions[4] = {Up, Down, Left, Right};
     position *positionsUsed[numTrainers];
     for (i = 0; i < numTrainers; i++) {
-        positionsUsed[i] = malloc(sizeof(*positionsUsed[i]));
+        positionsUsed[i] = static_cast<position*>(malloc(sizeof(*positionsUsed[i])));
         findPosition(trainers[i], terrainMap, numTrainers, positionsUsed);
 
         // Build value string to use in heap
@@ -761,7 +763,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
         int inBattle = 0;
 
         // Deconstruct Value String
-        strcpy(value, u.value);
+        strcpy(value, (char*)u.value);
         npc = strtok(value, " ");
         index = strtok(NULL, " ");
         int i = atoi(index);
@@ -1386,19 +1388,19 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
 terrainMap * generateTerrain(int *a, int *b, int firstGeneration, int numTrainers) {
     srand(time(NULL));
     
-    terrainMap *terrainMap = malloc(sizeof(*terrainMap));
+    terrainMap *tM = static_cast<terrainMap*>(malloc(sizeof(*tM)));
 
-    terrainMap->worldRow = *a;
-    terrainMap->worldCol = *b;
+    tM->worldRow = *a;
+    tM->worldCol = *b;
 
     int i, j;
 
     for (i = 0; i < 21; i++) {
         for (j = 0; j < 80; j++) {
             if (i == 0 || i == 20 || j == 0 || j == 79) {
-                terrainMap->terrain[i][j] = '%';
+                tM->terrain[i][j] = '%';
             } else {
-                terrainMap->terrain[i][j] = '.';
+                tM->terrain[i][j] = '.';
             }
         }
     }
@@ -1410,18 +1412,18 @@ terrainMap * generateTerrain(int *a, int *b, int firstGeneration, int numTrainer
     bldngSpawnChance += 50.00;
     bldngSpawnChance /= 100.00;
 
-    generateExits(terrainMap, a, b);
-    generateTallGrass(terrainMap->terrain);
-    generateWater(terrainMap->terrain);
-    generatePaths(terrainMap, a, b);
+    generateExits(tM, a, b);
+    generateTallGrass(tM->terrain);
+    generateWater(tM->terrain);
+    generatePaths(tM, a, b);
     if ((chance < bldngSpawnChance && chance > 0.00) || firstGeneration) {
-        generateBuildings(terrainMap, *a, *b);
+        generateBuildings(tM, *a, *b);
     }
-    decorateTerrain(terrainMap->terrain);
-    placeCharacter(terrainMap);
-    generateTrainers(terrainMap, numTrainers);
+    decorateTerrain(tM->terrain);
+    placeCharacter(tM);
+    generateTrainers(tM, numTrainers);
 
-    return terrainMap;
+    return tM;
 }
 
 int main(int argc, char *argv[]) {
