@@ -1125,6 +1125,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1)
                     && positionNotOccupied(trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1, numTrainers, trainers)) {
                         trainers[i]->pos.colPos--;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1, trainers[i]);
@@ -1141,6 +1142,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1)
                     && positionNotOccupied(trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1, numTrainers, trainers)) {
                         trainers[i]->pos.colPos++;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1, trainers[i]);
@@ -1157,6 +1159,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos)
                     && positionNotOccupied(trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos, numTrainers, trainers)) {
                         trainers[i]->pos.rowPos++;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos, trainers[i]);
@@ -1173,6 +1176,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos)
                     && positionNotOccupied(trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, numTrainers, trainers)) {
                         trainers[i]->pos.rowPos--;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, trainers[i]);
@@ -1192,6 +1196,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                 // move in direction until reach edge of spawn terrain then walk in random new direction
                 if (trainers[i]->direction == Left) {
                     if (positionNotOccupied(trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1, numTrainers, trainers)
+                    && notGate(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1)
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] == trainers[i]->spawn) {
                         trainers[i]->pos.colPos--;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1, trainers[i]);
@@ -1204,6 +1209,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                 }
                 if (trainers[i]->direction == Right) {
                     if (positionNotOccupied(trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1, numTrainers, trainers)
+                    && notGate(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1)
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] == trainers[i]->spawn) {
                         trainers[i]->pos.colPos++;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1, trainers[i]);
@@ -1216,6 +1222,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                 }
                 if (trainers[i]->direction == Down) {
                     if (positionNotOccupied(trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos, numTrainers, trainers)
+                    && notGate(terrainMap, trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos)
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] == trainers[i]->spawn) {
                         trainers[i]->pos.rowPos++;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos, trainers[i]);
@@ -1228,6 +1235,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                 }
                 if (trainers[i]->direction == Up) {
                     if (positionNotOccupied(trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, numTrainers, trainers)
+                    && notGate(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos)
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] == trainers[i]->spawn) {
                         trainers[i]->pos.rowPos--;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, trainers[i]);
@@ -1256,6 +1264,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos - 1] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1)
                     && positionNotOccupied(trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1, numTrainers, trainers)) {
                         trainers[i]->pos.colPos--;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos - 1, trainers[i]);
@@ -1272,6 +1281,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos][trainers[i]->pos.colPos + 1] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1)
                     && positionNotOccupied(trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1, numTrainers, trainers)) {
                         trainers[i]->pos.colPos++;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos, trainers[i]->pos.colPos + 1, trainers[i]);
@@ -1288,6 +1298,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos + 1][trainers[i]->pos.colPos] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos)
                     && positionNotOccupied(trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos, numTrainers, trainers)) {
                         trainers[i]->pos.rowPos++;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos + 1, trainers[i]->pos.colPos, trainers[i]);
@@ -1304,6 +1315,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != '~'
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != 'M'
                     && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != 'C'
+                    && notGate(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos)
                     && positionNotOccupied(trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, numTrainers, trainers)) {
                         trainers[i]->pos.rowPos--;
                         moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, trainers[i]);

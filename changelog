@@ -13,5 +13,13 @@
         To-Do
             Re-implement ability to travel between maps & fly command
             Prevent NPCs from entering gates
+    7:00pm-7:08pm
+        Adding conditionals to prevent NPCs from entering gates
+        To-Do
+            Re-implement ability to travel between maps & fly command
+                Idea: Add check to player movement's if user attempts to move into a gate, call generateTerrain
+                    Will probably need to pass the world around the program.
+
+
 
             
