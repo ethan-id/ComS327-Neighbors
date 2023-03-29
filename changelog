@@ -29,7 +29,17 @@
             Adjust player position after movement through gate
             Make it so map data (trainer positions and defeated status) is retained during travel between maps
             Make travelling loop, right now you can travel one map, then the game quits after you try to walk into another gate
-    3:20pm-
+    3:20pm-4:59pm
+        Working on making player position retain through travel
+        Implemented inheritance in structs.
+    5:00pm-5:29pm
+        Player position is now retained during travel through gates
+            getting some random seg faults tho
+            seems consisently faulting after travelling through one gate, then attempting to travel east
+                very strange
+        Player can now travel through multiple gates without game just quitting
+        To-Do
+            Implement fly command
 
 
             
