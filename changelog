@@ -19,7 +19,17 @@
             Re-implement ability to travel between maps & fly command
                 Idea: Add check to player movement's if user attempts to move into a gate, call generateTerrain
                     Will probably need to pass the world around the program.
-
+2/29/23
+    10:30am-2:00pm
+        Trying to add back in movement through maps.
+            Some refactoring of generateTrainers(), generateTerrain(), and main()
+    2:20pm-3:20pm
+        Finally got terrains to generate after player steps into gate
+        To-Do
+            Adjust player position after movement through gate
+            Make it so map data (trainer positions and defeated status) is retained during travel between maps
+            Make travelling loop, right now you can travel one map, then the game quits after you try to walk into another gate
+    3:20pm-
 
 
             

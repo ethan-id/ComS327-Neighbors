@@ -7,7 +7,7 @@ Ethan Hancock, ehancock@iastate.edu
 
 ### Description:
 #### Changes:
- - Main .c file now .cpp
+ - Ported all code to C++
 
 #### Methods Added
  - 

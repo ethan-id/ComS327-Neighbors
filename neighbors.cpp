@@ -43,8 +43,8 @@ class character {
 
 class squares {
     public:
-        int colPos;
         int rowPos;
+        int colPos;
         int cost;
         char terrain;
 };
@@ -53,10 +53,12 @@ class player {
     public:
         int rowPos;
         int colPos;
+        direction_t lastMove;
 };
 
 class terrainMap {
     public:
+        int generated;
         player pc;
         int northSouthExit;
         int westEastExit;
@@ -64,6 +66,7 @@ class terrainMap {
         int worldCol;
         char terrain[21][80];
         position roadPositions[101]; // 80 + 21
+        character *trainers[];
 };
 
 terrainMap *world[401][401];
@@ -113,22 +116,22 @@ int generateBuildings(terrainMap *terrainMap, int row, int col) {
     return 0;  
 }
 
-int generatePaths(terrainMap *terrainMap, int *currWorldRow, int *currWorldCol) {
+int generatePaths(terrainMap *terrainMap, int currWorldRow, int currWorldCol) {
     // Will need to update to check for existence of exits
     int i, j, k = 0;
     int rowStart = 0, colStart = 0;
     int rowEnd = 80, colEnd = 21;
 
-    if (*currWorldRow == 0) { // If at the bottom of the world
+    if (currWorldRow == 0) { // If at the bottom of the world
         colEnd = 20;
     }
-    if (*currWorldRow == 401) { // If at the top of the world
+    if (currWorldRow == 401) { // If at the top of the world
         colStart = 1;
     }
-    if (*currWorldCol == 0) {
+    if (currWorldCol == 0) {
         rowStart = 1;
     }
-    if (*currWorldCol == 401) {
+    if (currWorldCol == 401) {
         rowEnd = 79;
     }
 
@@ -230,25 +233,25 @@ void generateTallGrass(char map[21][80]) {
     }
 }
 
-void generateExits(terrainMap *terrainMap, int *row, int *col) {
+void generateExits(terrainMap *terrainMap, int row, int col) {
     int northSouthExit = (rand() % (69 - 10)) + 10;
     int westEastExit = (rand() % (16 - 3)) + 3;
 
     terrainMap->northSouthExit = northSouthExit;
     terrainMap->westEastExit = westEastExit;
 
-    if ((*row - 1) >= 0 && (*row + 1) < 401 && (*col - 1) >= 0 && (*col + 1) < 401) {
-        if (world[*row - 1][*col] != NULL) {
-            terrainMap->northSouthExit = world[*row - 1][*col]->northSouthExit;
+    if ((row - 1) >= 0 && (row + 1) < 401 && (col - 1) >= 0 && (col + 1) < 401) {
+        if (world[row - 1][col]->northSouthExit) {
+            terrainMap->northSouthExit = world[row - 1][col]->northSouthExit;
         }
-        if (world[*row + 1][*col] != NULL) {
-            terrainMap->northSouthExit = world[*row + 1][*col]->northSouthExit;    
+        if (world[row + 1][col]->northSouthExit) {
+            terrainMap->northSouthExit = world[row + 1][col]->northSouthExit;    
         }
-        if (world[*row][*col - 1] != NULL) {
-            terrainMap->westEastExit = world[*row][*col - 1]->westEastExit;
+        if (world[row][col - 1]->westEastExit) {
+            terrainMap->westEastExit = world[row][col - 1]->westEastExit;
         }
-        if (world[*row][*col + 1] != NULL) {
-            terrainMap->westEastExit = world[*row][*col + 1]->westEastExit;
+        if (world[row][col + 1]->westEastExit) {
+            terrainMap->westEastExit = world[row][col + 1]->westEastExit;
         }
     }
 }
@@ -382,7 +385,7 @@ void dijkstra(char map[21][80], squares squares[21][80], player source) {
     // Reassign squares.cost to dist to display the map
     for(i = 0; i < 21; i++) {
         for(j = 0; j < 80; j++) {
-            // free(prev[i][j]);
+            free(prev[i][j]);
             squares[i][j].cost = dist[i][j];
         }
     }
@@ -463,11 +466,11 @@ int positionOccupied(int arrSize, position arr[], position pos) {
 
 void displayMap(terrainMap *terrainMap, int numTrainers, character *trainers[]) {
     int i, j, k;
-    // int northMult = 1;
-    // int westMult = 1;
+    int northMult = 1;
+    int westMult = 1;
     char charToPrint;
-    // char ns = 'N';
-    // char ew = 'E';
+    char ns = 'N';
+    char ew = 'E';
 
     for (i = 0; i < 21; i++) {
         for (j = 0; j < 80; j++) {
@@ -528,33 +531,29 @@ void displayMap(terrainMap *terrainMap, int numTrainers, character *trainers[]) 
         }
     }
 
-    // if (terrainMap->worldRow - 200 < 0) {
-    //     northMult = -1;
-    //     ns = 'S';
-    // }
-    // if (terrainMap->worldCol - 200 < 0) {
-    //     westMult = -1;
-    //     ew = 'W';
-    // }
+    if (terrainMap->worldRow - 200 < 0) {
+        northMult = -1;
+        ns = 'S';
+    }
+    if (terrainMap->worldCol - 200 < 0) {
+        westMult = -1;
+        ew = 'W';
+    }
 
-    // mvprintw(22, 0, "Coords: %d%c %d%c\n", (terrainMap->worldRow - 200) * northMult, ns, (terrainMap->worldCol - 200) * westMult, ew);
+    mvprintw(22, 0, "Coords: %d%c %d%c\n", (terrainMap->worldRow - 200) * northMult, ns, (terrainMap->worldCol - 200) * westMult, ew);
 }
 
-void findPosition(character *trainer, terrainMap *terrainMap, int numTrainers, position *positionsUsed[]) {
+void findPosition(character *trainer, terrainMap *terrainMap, int numTrainers) {
     static int positionsMarked = 0;
     int col = (rand() % (70 - 10)) + 10;
     int row = (rand() % (16 - 3)) + 3;
-    position pos;
-    pos.rowPos = row;
-    pos.colPos = col;
 
     switch(trainer->npc) {
             case '@' :
                 break;
             case 'm' : // is a swimmer
                 // pick random position that has not been chosen before and is water
-                while(terrainMap->terrain[row][col] != '~'
-                || positionOccupied(numTrainers, *positionsUsed, pos)) {
+                while(terrainMap->terrain[row][col] != '~') {
                     col = (rand() % (70 - 10)) + 10;
                     row = (rand() % (16 - 3)) + 3;
                 }
@@ -562,9 +561,6 @@ void findPosition(character *trainer, terrainMap *terrainMap, int numTrainers, p
                 trainer->pos.rowPos = row;
                 trainer->pos.colPos = col;
                 // printf("Placed %c at [%d, %d]\n", trainer->npc, row, col);
-                // add position to positionsUsed
-                positionsUsed[positionsMarked]->rowPos = row;
-                positionsUsed[positionsMarked]->colPos = col;
                 
                 positionsMarked++;
                 break;
@@ -575,8 +571,7 @@ void findPosition(character *trainer, terrainMap *terrainMap, int numTrainers, p
                 || terrainMap->terrain[row][col] == '~'
                 || terrainMap->terrain[row][col] == '#'
                 || terrainMap->terrain[row][col] == 'M'
-                || terrainMap->terrain[row][col] == 'C'
-                || positionOccupied(numTrainers, *positionsUsed, pos)) {
+                || terrainMap->terrain[row][col] == 'C') {
                     col = (rand() % (70 - 10)) + 10;
                     row = (rand() % (16 - 3)) + 3;
                 }
@@ -586,9 +581,6 @@ void findPosition(character *trainer, terrainMap *terrainMap, int numTrainers, p
                 // printf("Placed %c at [%d, %d]\n", trainer->npc, row, col);
                 // for wanderers to know what terrain they spawned in
                 trainer->spawn = terrainMap->terrain[row][col];
-                // add position to positionsUsed
-                positionsUsed[positionsMarked]->rowPos = row;
-                positionsUsed[positionsMarked]->colPos = col;
                 
                 positionsMarked++;
                 break;
@@ -695,19 +687,20 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     // pick random assortment of trainers, including at least one hiker and one rival
     // unless numTrainers < 2
     int i;
-    // make room for player
-    numTrainers++;
 
     character *trainers[numTrainers];
     char trainerOptions[7] = {'r', 'h', 'p', 'w', 's', 'e', 'm'};
 
     for (i = 0; i < numTrainers; i++) {
         trainers[i] = static_cast<character*>(malloc(sizeof(*trainers[i])));
+    }
+
+    for (i = 0; i < numTrainers; i++) {
         trainers[i]->defeated = 0;
     }
 
     // Fill up trainers[] with random npcs, guaranteeing the first to be a hiker and the second to be a rival, rest are random
-    for (i = 0; i < numTrainers - 1; i++) {
+    for (i = 0; i < numTrainers; i++) {
         if (i == 0) {
             trainers[i]->npc = 'h';
             trainers[i]->nextMoveTime = 0;
@@ -716,9 +709,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
             trainers[i]->nextMoveTime = 0;
         } else {
             trainers[i]->npc = trainerOptions[rand() % 7];
-            // trainers[i]->npc = 'e'; //testing
             trainers[i]->nextMoveTime = 0;
-            // heap_insert(&characterHeap, &trainers[i]->nextMoveTime, &trainers[i]);
         }
     }
     
@@ -730,10 +721,11 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
 
     // Place all trainers and give pacers, wanderers, and explorers, a random direction to start with
     direction_t directionOptions[4] = {Up, Down, Left, Right};
-    position *positionsUsed[numTrainers];
+    
     for (i = 0; i < numTrainers; i++) {
-        positionsUsed[i] = static_cast<position*>(malloc(sizeof(*positionsUsed[i])));
-        findPosition(trainers[i], terrainMap, numTrainers, positionsUsed);
+        if (trainers[i]->npc != '@') {
+            findPosition(trainers[i], terrainMap, numTrainers);
+        }
 
         // Build value string to use in heap
         snprintf(trainers[i]->value, sizeof(trainers[i]->value), "%c %d", trainers[i]->npc, i);
@@ -742,10 +734,23 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
             trainers[i]->direction = directionOptions[rand() % 4];
         }
     }
+    
+    if (terrainMap->generated) {
+        mvprintw(0, 0, "This map has been visited.");
+        refresh();
+        usleep(500000);
+        // AKA overwrite trainers[i] with terrainMap->trainers[]
+    } else {
+        mvprintw(0, 0, "This map has not been visited.");
+        refresh();
+        usleep(500000);
+        // can continue with newly generated trainers
+    }
 
-    // Insert trainers into queue
     heap characterHeap;
     heap_create(&characterHeap, 9999, NULL);
+
+    // Insert trainers into queue
     for (i = 0; i < numTrainers; i++) {
         heap_insert(&characterHeap, &trainers[i]->nextMoveTime, &trainers[i]->value);
     }
@@ -811,15 +816,18 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                     case (107) : {
                         mvprintw(0, 0, "%-50s", " ");
                         int posNotOcc = positionNotOccupied(trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, numTrainers, trainers);
+                        int gateCheck = notGate(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos);
+
                         if (terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != '%'
                         && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != '^'
                         && terrainMap->terrain[trainers[i]->pos.rowPos - 1][trainers[i]->pos.colPos] != '~'
-                        && notGate(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos)
+                        && gateCheck
                         && posNotOcc == 1) {
                             trainers[i]->pos.rowPos--;
                             terrainMap->pc.rowPos--;
                             moveCost = getMoveCost(terrainMap, trainers[i]->pos.rowPos - 1, trainers[i]->pos.colPos, trainers[i]);
                         }
+
                         if (posNotOcc != 1) {
                             if(trainers[posNotOcc - 10]->defeated != 0) {
                                 mvprintw(0, 0, "%-50s", "You've already defeated this trainer in battle...");
@@ -836,6 +844,21 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                                 }
                             }
                         }
+
+                        if (gateCheck == 0) { // If player wants to move into gate
+                            // Save trainer array to terrainMap
+                            for(int k = 0; k < numTrainers; k++) {
+                                // terrainMap->trainers[k]->npc = trainers[k]->npc;
+                                // terrainMap->trainers[k]->pos.rowPos = trainers[k]->pos.rowPos;
+                                // terrainMap->trainers[k]->pos.colPos = trainers[k]->pos.colPos;
+                                mvprintw(0, 0, "Saved trainer %c  trainers[%d]", trainers[k]->npc, k);
+                                refresh();
+                                usleep(250000);
+                            }
+                            terrainMap->pc.lastMove = Up;
+                            dontQuit = 0;
+                        }
+
                         break;
                     }
                     case (57) :
@@ -1082,7 +1105,6 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                         refresh();
                         usleep(500000);
                         dontQuit = 0;
-                        // heap_destroy(&characterHeap);
                         break;
                     }
                 }
@@ -1394,19 +1416,17 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
         }
     }
 
+    for (i = 0; i < numTrainers; i++) {
+        free(trainers[i]);
+    }
+
     heap_destroy(&characterHeap);
 }
 
-terrainMap * generateTerrain(int *a, int *b, int firstGeneration, int numTrainers) {
-    srand(time(NULL));
-    
-    terrainMap *tM = static_cast<terrainMap*>(malloc(sizeof(*tM)));
-
-    tM->worldRow = *a;
-    tM->worldCol = *b;
-
+void generateTerrain(terrainMap *tM, int a, int b, int firstGeneration, int numTrainers) {
     int i, j;
 
+    // Add border to map fill rest with short grass
     for (i = 0; i < 21; i++) {
         for (j = 0; j < 80; j++) {
             if (i == 0 || i == 20 || j == 0 || j == 79) {
@@ -1417,8 +1437,9 @@ terrainMap * generateTerrain(int *a, int *b, int firstGeneration, int numTrainer
         }
     }
 
+    // Calculate building spawn chance
     double chance = (rand() / (RAND_MAX / 1.00));
-    double bldngSpawnChance = abs(*a - 200) + abs(*b - 200);
+    double bldngSpawnChance = abs(a - 200) + abs(b - 200);
     bldngSpawnChance *= -45.00;
     bldngSpawnChance /= 400.00;
     bldngSpawnChance += 50.00;
@@ -1429,22 +1450,17 @@ terrainMap * generateTerrain(int *a, int *b, int firstGeneration, int numTrainer
     generateWater(tM->terrain);
     generatePaths(tM, a, b);
     if ((chance < bldngSpawnChance && chance > 0.00) || firstGeneration) {
-        generateBuildings(tM, *a, *b);
+        generateBuildings(tM, a, b);
     }
     decorateTerrain(tM->terrain);
     placeCharacter(tM);
     generateTrainers(tM, numTrainers);
-
-    return tM;
+    tM->generated = 1;
 }
 
 int main(int argc, char *argv[]) {
-    // char userInput[13];
+    srand(time(NULL));
     int i, j;
-    // int quit = 0;
-    // char *move;
-    // char *flyRow;
-    // char *flyCol;
     int currWorldRow = 200;
     int currWorldCol = 200;
     int numTrainers = 8; // Default number of trainers = 8
@@ -1453,7 +1469,7 @@ int main(int argc, char *argv[]) {
     if(argv[1]) {
         if (strcmp(argv[1], "--numtrainers") == 0) {
             // Generate terrain with the number they passed
-            numTrainers = atoi(argv[2]);
+            numTrainers = atoi(argv[2]) + 1;
         }
     }
 
@@ -1466,16 +1482,87 @@ int main(int argc, char *argv[]) {
     init_pair(TREE_COLOR, COLOR_BLACK, COLOR_GREEN);
     init_pair(BOULDER_COLOR, COLOR_CYAN, COLOR_BLACK);
     init_pair(ROAD_COLOR, COLOR_YELLOW, COLOR_BLACK);
-    
-    world[currWorldRow][currWorldCol] = generateTerrain(&currWorldRow, &currWorldCol, 1, numTrainers);
 
-    endwin();
+    for (i = 0; i < 401; i++) {
+        for (j = 0; j < 401; j++) {
+            world[i][j] = static_cast<terrainMap*>(malloc(sizeof(*world[i][j])));
+            world[i][j]->generated = 0;
+        }
+    }
+    
+    generateTerrain(world[currWorldRow][currWorldCol], currWorldRow, currWorldCol, 1, numTrainers);
+
+    if (world[currWorldRow][currWorldCol]->pc.lastMove != 0) {
+        switch(world[currWorldRow][currWorldCol]->pc.lastMove) {
+            case Up :
+                mvprintw(0, 0, "Player moved up");
+                refresh();
+                usleep(500000);
+                currWorldRow--;
+                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
+                refresh();
+                usleep(500000);
+                if (!world[currWorldRow][currWorldCol]->generated) {
+                    mvprintw(0, 0, "Generating New Map");
+                    refresh();
+                    usleep(500000);
+                    generateTerrain(world[currWorldRow][currWorldCol], currWorldRow, currWorldCol, 0, numTrainers);
+                } else {
+                    generateTrainers(world[currWorldRow][currWorldCol], numTrainers);
+                }
+                break;
+            case Down :
+                mvprintw(0, 0, "Player moved down");
+                currWorldRow++;
+                refresh();
+                usleep(250000);
+                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
+                refresh();
+                usleep(250000);
+                if (!world[currWorldRow][currWorldCol]->generated) {
+                    generateTerrain(world[currWorldRow][currWorldCol], currWorldRow, currWorldCol, 0, numTrainers);
+                } else {
+                    generateTrainers(world[currWorldRow][currWorldCol], numTrainers);
+                }
+                break;
+            case Left :
+                mvprintw(0, 0, "Player moved left");
+                currWorldCol--;
+                refresh();
+                usleep(250000);
+                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
+                refresh();
+                usleep(250000);
+                if (!world[currWorldRow][currWorldCol]->generated) {
+                    generateTerrain(world[currWorldRow][currWorldCol], currWorldRow, currWorldCol, 0, numTrainers);
+                } else {
+                    generateTrainers(world[currWorldRow][currWorldCol], numTrainers);
+                }
+                break;
+            case Right :
+                mvprintw(0, 0, "Player moved right");
+                currWorldCol++;
+                refresh();
+                usleep(250000);
+                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
+                refresh();
+                usleep(250000);
+                if (!world[currWorldRow][currWorldCol]->generated) {
+                    generateTerrain(world[currWorldRow][currWorldCol], currWorldRow, currWorldCol, 0, numTrainers);
+                } else {
+                    generateTrainers(world[currWorldRow][currWorldCol], numTrainers);
+                }
+                break;
+        }
+    }
 
     for (i = 0; i < 401; i++) {
         for (j = 0; j < 401; j++) {
             free(world[i][j]);
         }
     }
+
+    endwin();
 
     return 0;
 }
