@@ -50,8 +50,9 @@
             Sort out seg faults
     8:04pm-8:13pm
         Seems like the seg faults are occuring exclusively when back-tracking into terrain already generated, was able to explore into new maps for a solid few minutes with no faults on multiple occasions.
-    8:15pm
+    8:15pm-9:01pm
         Also noted that transitioning between two maps by travelling north and south repeatedly seems to not cause faults.
-        Travelling west also seems to freeze the game
+        Travelling west also seems to freeze the game or cause a seg fault every time...
+        AAdded logic preventing player from spawning on gates
 
             

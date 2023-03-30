@@ -3,7 +3,8 @@
 ### Author:
 Ethan Hancock, ehancock@iastate.edu
 ### TA Notes: 
-> 
+> For some reason, travelling east/to the right breaks things, but travelling north, south, and west all work fine, despite identical code. Assuming some minor memory mismanagement issue is the cause but couldn't come up with a solution in time.
+> Trainer locations also aren't maintained between maps.
 
 ### Description:
 #### Major Changes:

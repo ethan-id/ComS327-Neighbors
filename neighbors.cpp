@@ -51,7 +51,6 @@ class squares {
 class player: public position {
     public:
         int preset;
-        direction_t lastMove;
 };
 
 class terrainMap {
@@ -262,8 +261,18 @@ void generateExits(terrainMap *terrainMap, int row, int col) {
 void placeCharacter(terrainMap *terrainMap) {
     // Pick a random road
     int selectedRoad = (rand() % (101 - 0)) + 0;
-
+    int selected = 0;
     // 'Place character' 
+    while(!selected) {
+        if (terrainMap->roadPositions[selectedRoad].rowPos == 0 
+        || terrainMap->roadPositions[selectedRoad].rowPos == 20 
+        || terrainMap->roadPositions[selectedRoad].colPos == 0 
+        || terrainMap->roadPositions[selectedRoad].colPos == 79) {
+            selectedRoad = (rand() % (101 - 0)) + 0;
+        } else {
+            selected = 1;
+        }
+    }
     terrainMap->pc.rowPos = terrainMap->roadPositions[selectedRoad].rowPos;
     terrainMap->pc.colPos = terrainMap->roadPositions[selectedRoad].colPos;
 }
@@ -707,6 +716,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     trainers[numTrainers - 1]->colPos = terrainMap->pc.colPos;
     trainers[numTrainers - 1]->nextMoveTime = 0;
 
+    // If the player has a preset position, AKA just came from another map, place it next to the corresponding exit.
     if (terrainMap->pc.preset) {
         switch(lastMove) {
             case Up :
@@ -752,14 +762,12 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     heap_create(&characterHeap, 9999, NULL);
 
     if (terrainMap->generated == 1) {
-        // AKA overwrite trainers[i] with terrainMap->trainers[i]
-        mvprintw(0, 0, "generated: %d", terrainMap->generated);
+        // AKA overwrite trainers[i] with terrainMap->trainers[i] or trainers stored from previous generation.
         for (i = 0; i < numTrainers; i++) {
             trainers[i] = terrainMap->trainers[i];
         }
     } else {
         // Mark as generated.
-        mvprintw(0, 0, "generated: %d", terrainMap->generated);
         terrainMap->generated = 1;
     }
 
@@ -815,7 +823,6 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                                 terrainMap->wantToFly = 1;
                                 mvprintw(0, 0, "%-80s", "");
                                 mvprintw(22, 0, "%-80s", "");
-                                mvprintw(22, 0, "%d %d", terrainMap->flyRow, terrainMap->flyCol);
                                 flying = 0;
                                 dontQuit = 0;
                             }
@@ -893,7 +900,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                             for(int k = 0; k < numTrainers; k++) {
                                 terrainMap->trainers[k] = trainers[k];
                             }
-                            terrainMap->pc.lastMove = Up;
+                            lastMove = Up;
                             dontQuit = 0;
                         }
 
@@ -970,7 +977,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                                 terrainMap->trainers[k]->rowPos = trainers[k]->rowPos;
                                 terrainMap->trainers[k]->colPos = trainers[k]->colPos;
                             }
-                            terrainMap->pc.lastMove = Right;
+                            lastMove = Right;
                             dontQuit = 0;
                         }
                         break;
@@ -1044,7 +1051,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                             for(int k = 0; k < numTrainers; k++) {
                                 terrainMap->trainers[k] = trainers[k];
                             }
-                            terrainMap->pc.lastMove = Down;
+                            lastMove = Down;
                             dontQuit = 0;
                         }
                         break;
@@ -1118,7 +1125,7 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                             for(int k = 0; k < numTrainers; k++) {
                                 terrainMap->trainers[k] = trainers[k];
                             }
-                            terrainMap->pc.lastMove = Left;
+                            lastMove = Left;
                             dontQuit = 0;
                         }
                         break;
@@ -1563,8 +1570,12 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < 401; i++) {
         for (j = 0; j < 401; j++) {
             world[i][j] = static_cast<terrainMap*>(malloc(sizeof(*world[i][j])));
+        }
+    }
+
+    for (i = 0; i < 401; i++) {
+        for (j = 0; j < 401; j++) {
             world[i][j]->generated = 0;
-            world[i][j]->pc.lastMove = None;
         }
     }
     
@@ -1586,10 +1597,11 @@ int main(int argc, char *argv[]) {
                 generateTrainers(world[currWorldRow][currWorldCol], numTrainers);
             }
         }
-        switch(world[currWorldRow][currWorldCol]->pc.lastMove) {
+        switch(lastMove) {
             case Up :
                 currWorldRow--;
-                world[currWorldRow][currWorldCol]->worldRow--;
+                world[currWorldRow][currWorldCol]->worldRow = currWorldRow;
+                world[currWorldRow][currWorldCol]->worldCol = currWorldCol;
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Up;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
@@ -1600,7 +1612,8 @@ int main(int argc, char *argv[]) {
                 break;
             case Down :
                 currWorldRow++;
-                world[currWorldRow][currWorldCol]->worldRow++;
+                world[currWorldRow][currWorldCol]->worldRow = currWorldRow;
+                world[currWorldRow][currWorldCol]->worldCol = currWorldCol;
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Down;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
@@ -1611,7 +1624,8 @@ int main(int argc, char *argv[]) {
                 break;
             case Left :
                 currWorldCol--;
-                world[currWorldRow][currWorldCol]->worldCol--;
+                world[currWorldRow][currWorldCol]->worldRow = currWorldRow;
+                world[currWorldRow][currWorldCol]->worldCol = currWorldCol;
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Left;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
@@ -1622,7 +1636,8 @@ int main(int argc, char *argv[]) {
                 break;
             case Right :
                 currWorldCol++;
-                world[currWorldRow][currWorldCol]->worldCol++;
+                world[currWorldRow][currWorldCol]->worldRow = currWorldRow;
+                world[currWorldRow][currWorldCol]->worldCol = currWorldCol;
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Right;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
