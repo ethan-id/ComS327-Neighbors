@@ -57,6 +57,9 @@ class player: public position {
 class terrainMap {
     public:
         int quit;
+        int wantToFly;
+        int flyRow;
+        int flyCol;
         int generated;
         player pc;
         int northSouthExit;
@@ -705,11 +708,6 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     trainers[numTrainers - 1]->nextMoveTime = 0;
 
     if (terrainMap->pc.preset) {
-        mvprintw(0, 0, "Player should be placed");
-        refresh();
-        usleep(1000000);
-        terrainMap->pc.rowPos = 2;
-        terrainMap->pc.colPos = 2;
         switch(lastMove) {
             case Up :
                 terrainMap->pc.rowPos = 19;
@@ -753,17 +751,21 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
     heap characterHeap;
     heap_create(&characterHeap, 9999, NULL);
 
-    if (terrainMap->generated) {
-        // AKA overwrite trainers[i] with terrainMap->trainers[]
+    if (terrainMap->generated == 1) {
+        // AKA overwrite trainers[i] with terrainMap->trainers[i]
+        mvprintw(0, 0, "generated: %d", terrainMap->generated);
         for (i = 0; i < numTrainers; i++) {
-            heap_insert(&characterHeap, &terrainMap->trainers[i]->nextMoveTime, &terrainMap->trainers[i]->value);
+            trainers[i] = terrainMap->trainers[i];
         }
     } else {
-        // Insert trainers into queue
-        for (i = 0; i < numTrainers; i++) {
-            heap_insert(&characterHeap, &trainers[i]->nextMoveTime, &trainers[i]->value);
-        }
+        // Mark as generated.
+        mvprintw(0, 0, "generated: %d", terrainMap->generated);
         terrainMap->generated = 1;
+    }
+
+    // Insert trainers into queue.
+    for (i = 0; i < numTrainers; i++) {
+        heap_insert(&characterHeap, &trainers[i]->nextMoveTime, &trainers[i]->value);
     }
 
     // While the queue of trainers isn't empty, dequeue the trainer with the cheapest next move, make the move, 
@@ -791,6 +793,36 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                 int c = getch();
                 // mvprintw(0, 60, "You pressed %d    ", c);
                 switch(c) {
+                    case(102) : {
+                        int flying = 1;
+                        char str[10] = "";
+                        mvprintw(0, 0, "You have pressed 'f', activating the fly command.");
+                        mvprintw(22, 0, "Press any key to continue, 'esc' to cancel.");
+                        int ch = getch();
+                        if (ch == 27) {
+                            flying = 0;
+                            mvprintw(0, 0, "%-80s", "");
+                            mvprintw(22, 0, "%-80s", "");
+                        }
+                        refresh();
+                        while(flying) {
+                            mvprintw(22, 0, "Please enter two integers from -200 to 200 separated by a space: ");
+                            echo();
+                            getstr(str);
+                            if (strcmp(str, "") != 0) {
+                                terrainMap->flyRow = atoi(strtok(str, " "));
+                                terrainMap->flyCol = atoi(strtok(NULL, " "));
+                                terrainMap->wantToFly = 1;
+                                mvprintw(0, 0, "%-80s", "");
+                                mvprintw(22, 0, "%-80s", "");
+                                mvprintw(22, 0, "%d %d", terrainMap->flyRow, terrainMap->flyCol);
+                                flying = 0;
+                                dontQuit = 0;
+                            }
+                            noecho();
+                        }
+                        break;
+                    }
                     case (55) :
                     case (121) : {
                         mvprintw(0, 0, "%-50s", " ");
@@ -935,6 +967,8 @@ void generateTrainers(terrainMap *terrainMap, int numTrainers) {
                             // Save trainer array to terrainMap
                             for(int k = 0; k < numTrainers; k++) {
                                 terrainMap->trainers[k] = trainers[k];
+                                terrainMap->trainers[k]->rowPos = trainers[k]->rowPos;
+                                terrainMap->trainers[k]->colPos = trainers[k]->colPos;
                             }
                             terrainMap->pc.lastMove = Right;
                             dontQuit = 0;
@@ -1540,13 +1574,22 @@ int main(int argc, char *argv[]) {
         if (world[currWorldRow][currWorldCol]->quit) {
             quit = 1;
         }
+        if (world[currWorldRow][currWorldCol]->wantToFly) {
+            int newRow = world[currWorldRow][currWorldCol]->flyRow;
+            int newCol = world[currWorldRow][currWorldCol]->flyCol;
+            world[currWorldRow][currWorldCol]->wantToFly = 0;
+            currWorldRow = newRow;
+            currWorldCol = newCol;
+            if (!world[currWorldRow][currWorldCol]->generated) {
+                generateTerrain(world[currWorldRow][currWorldCol], currWorldRow, currWorldCol, 0, numTrainers);
+            } else {
+                generateTrainers(world[currWorldRow][currWorldCol], numTrainers);
+            }
+        }
         switch(world[currWorldRow][currWorldCol]->pc.lastMove) {
             case Up :
                 currWorldRow--;
                 world[currWorldRow][currWorldCol]->worldRow--;
-                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
-                refresh();
-                usleep(500000);
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Up;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
@@ -1558,9 +1601,6 @@ int main(int argc, char *argv[]) {
             case Down :
                 currWorldRow++;
                 world[currWorldRow][currWorldCol]->worldRow++;
-                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
-                refresh();
-                usleep(250000);
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Down;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
@@ -1572,9 +1612,6 @@ int main(int argc, char *argv[]) {
             case Left :
                 currWorldCol--;
                 world[currWorldRow][currWorldCol]->worldCol--;
-                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
-                refresh();
-                usleep(250000);
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Left;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;
@@ -1586,9 +1623,6 @@ int main(int argc, char *argv[]) {
             case Right :
                 currWorldCol++;
                 world[currWorldRow][currWorldCol]->worldCol++;
-                mvprintw(0, 0, "CR: %d, CC: %d", currWorldRow, currWorldCol);
-                refresh();
-                usleep(250000);
                 if (!world[currWorldRow][currWorldCol]->generated) {
                     lastMove = Right;
                     world[currWorldRow][currWorldCol]->pc.preset = 1;

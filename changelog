@@ -1,6 +1,6 @@
 3/25/23
     Started Porting to C++
-2/27/23
+3/27/23
     6:00pm-6:52pm
         Updated makefile
             updated linking line to use C++ compiler instead of C as instructed in assignment description
@@ -19,7 +19,7 @@
             Re-implement ability to travel between maps & fly command
                 Idea: Add check to player movement's if user attempts to move into a gate, call generateTerrain
                     Will probably need to pass the world around the program.
-2/29/23
+3/29/23
     10:30am-2:00pm
         Trying to add back in movement through maps.
             Some refactoring of generateTrainers(), generateTerrain(), and main()
@@ -40,6 +40,18 @@
         Player can now travel through multiple gates without game just quitting
         To-Do
             Implement fly command
-
+            Make it so player can't spawn on gate
+    6:20pm-6:49pm
+        Implemented user actions to activate fly command and gather input for where to fly
+            Need to make it actually fly there now
+    6:50pm-8:02pm
+        Flying actually flies now
+        To-Do
+            Sort out seg faults
+    8:04pm-8:13pm
+        Seems like the seg faults are occuring exclusively when back-tracking into terrain already generated, was able to explore into new maps for a solid few minutes with no faults on multiple occasions.
+    8:15pm
+        Also noted that transitioning between two maps by travelling north and south repeatedly seems to not cause faults.
+        Travelling west also seems to freeze the game
 
             
